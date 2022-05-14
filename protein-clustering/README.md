@@ -1,6 +1,4 @@
-# snakemake-pipelines
-
-## `protein-clustering-diamond-mcl.smk`
+# `protein-clustering-diamond-mcl.smk`
 
 Clusters and aligns proteins from an input FASTA file using DIAMOND for pairwise sequence comparison, MCL for clustering, and MAFFT for multiple sequence alignment.
 
@@ -17,7 +15,7 @@ snakemake --config input=proteins.faa \
                    -j 16 -s protein-clustering-diamond-mcl.smk
 ```
 
-## `protein-clustering-mmseqs2.smk`
+# `protein-clustering-mmseqs2.smk`
 
 Clusters and aligns proteins from an input FASTA file using the set cover algorithm from MMSeqs2 for clustering and MAFFT for multiple sequence alignment.
 
