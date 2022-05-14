@@ -1,2 +1,3 @@
-# bioinformatics-snakemake-pipeline
-Collection of Snakemake pipeline for commin bioinformatics tasks
+# `bioinformatics-snakemake-pipelines`
+
+Collection of Snakemake pipeline for common bioinformatics tasks.
