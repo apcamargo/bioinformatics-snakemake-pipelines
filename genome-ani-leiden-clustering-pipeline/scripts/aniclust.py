@@ -123,7 +123,7 @@ def pick_resolution(
     last_res = None
     last_avg_weight = None
     # Iterate through resolution parameters (`res`)
-    for res in np.linspace(1, 0, steps):
+    for res in np.linspace(2, 0, steps):
         random.seed(seed)
         # Find the communities using the current resolution parameter
         communities = graph.community_leiden(weights="weight", resolution_parameter=res)
@@ -147,7 +147,7 @@ def pick_resolution(
         # Compute the average value of all the edges in the iteration
         current_avg_ani = np.mean(ani_list) if len(ani_list) else 1
         # If this is the first iteration (that is, `res == 1`)
-        if res == 1:
+        if res == 2:
             last_res = res
             last_avg_weight = current_avg_ani
         # If the difference between the curent iteration average ANI and the target ANI
