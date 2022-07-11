@@ -4,7 +4,7 @@ def parse_seqs(path):
         seq = ""
         for line in handle:
             if line[0] == ">":
-                yield id, seq
+                yield seq_id, seq
                 seq_id = line.split()[0][1:]
                 seq = ""
             else:
