@@ -182,7 +182,6 @@ clusters = ani_graph.community_leiden(
 )
 
 with open(snakemake.output[0], "w") as fout:
-    fout.write(f"{leiden_resolution}\n")
     for i in reversed(np.argsort(clusters.sizes())):
         subgraph = clusters.subgraph(i)
         members = {v.attributes()["name"]: v.attributes()["length"] for v in subgraph.vs}
