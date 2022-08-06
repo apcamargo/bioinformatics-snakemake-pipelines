@@ -5,6 +5,7 @@ import random
 import igraph as ig
 import numpy as np
 
+
 class Sequence:
     def __init__(self, header, seq):
         self._header = header
@@ -53,7 +54,12 @@ def read_fasta(filepath):
                 break
 
 
-def build_graph(ani_file, fasta_file, min_cov=snakemake.params.min_cov):
+def build_graph(
+    ani_file,
+    fasta_file,
+    min_ani=snakemake.params.min_ani,
+    min_cov=snakemake.params.min_cov,
+):
     # Read the input FASTA file to get the names of all the sequences (nodes)
     nodes = []
     lengths = []
@@ -83,11 +89,12 @@ def build_graph(ani_file, fasta_file, min_cov=snakemake.params.min_cov):
                 float(qcov),
                 float(tcov),
             )
-            # If both the sequences in the ANI pair were in the input FASTA file
-            # and either `qcov` or `tcov` is equal to or greater than `min_cov`,
-            # store their connection
+            # If both the sequences in the ANI pair were in the input FASTA file,
+            # their ANI is equal to or greater than `min_ani`, and either`qcov`
+            # or `tcov` is equal to or greater than `min_cov`, store their connection
             if (
                 ((seq_1 in nodes_set) and (seq_2 in nodes_set))
+                and (ani >= min_ani)
                 and ((qcov >= min_cov) or (tcov >= min_cov))
             ):
                 pair = tuple(sorted([seq_1, seq_2]))
@@ -107,7 +114,10 @@ def build_graph(ani_file, fasta_file, min_cov=snakemake.params.min_cov):
 
 
 def pick_resolution(
-    graph, target_avg_ani=snakemake.params.avg_ani, steps=101, seed=snakemake.params.seed
+    graph,
+    target_avg_ani=snakemake.params.avg_ani,
+    steps=101,
+    seed=snakemake.params.seed,
 ):
     """
     Given a graph (`graph`) and a target average within-cluster ANI (`target_avg_ani`),
@@ -161,13 +171,18 @@ def pick_resolution(
             break
     return last_res
 
+
 ani_graph = build_graph(snakemake.input.ANI, snakemake.input.FASTA)
-leiden_resolution = pick_resolution(ani_graph)
+if snakemake.params.leiden_resolution == "auto":
+    leiden_resolution = pick_resolution(ani_graph)
+else:
+    leiden_resolution = snakemake.params.leiden_resolution
 clusters = ani_graph.community_leiden(
     weights="weight", resolution_parameter=leiden_resolution
 )
 
 with open(snakemake.output[0], "w") as fout:
+    fout.write(f"{leiden_resolution}\n")
     for i in reversed(np.argsort(clusters.sizes())):
         subgraph = clusters.subgraph(i)
         members = {v.attributes()["name"]: v.attributes()["length"] for v in subgraph.vs}

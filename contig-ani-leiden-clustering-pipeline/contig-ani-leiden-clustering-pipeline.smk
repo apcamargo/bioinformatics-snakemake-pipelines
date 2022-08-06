@@ -38,8 +38,10 @@ rule aniclust:
         ANI=f"{ID}_ani.tsv"
     output: f"{ID}_clusters.tsv"
     params:
-        avg_ani = config.get("avg_ani", 0.95),
+        leiden_resolution = config.get("leiden_resolution", 1),
+        min_ani = config.get("min_ani", 0.95),
         min_cov = config.get("min_cov", 0.85),
+        avg_ani = config.get("avg_ani", 0.95),
         seed = config.get("seed", 1953)
     script: "scripts/aniclust.py"
 
