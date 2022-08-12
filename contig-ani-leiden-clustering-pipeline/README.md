@@ -1,6 +1,6 @@
 # contig-ani-leiden-clustering-pipeline
 
-Computes *contig-wise* ANI from an input FASTA file, clusters the sequences, and writes cluster representatives.
+Computes *contig-wise* ANI from an input FASTA file, clusters the sequences, and writes cluster representatives. The ANI computation is performed using code based on [a script](https://bitbucket.org/berkeleylab/checkv/src/master/) written by Stephen Nayfach.
 
 ```
 # Run the ANI-based dereplication with default parameters

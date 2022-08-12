@@ -1,6 +1,6 @@
 # genome-ani-leiden-clustering-pipeline
 
-Computes *genome-wise* ANI from input FASTA files, clusters the genomes, and writes cluster representatives.
+Computes *genome-wise* ANI from input FASTA files, clusters the genomes, and writes cluster representatives. The ANI computation is performed using code based on [a script](https://bitbucket.org/berkeleylab/checkv/src/master/) written by Stephen Nayfach.
 
 ```
 # Run the ANI-based dereplication with default parameters
