@@ -5,6 +5,7 @@ import random
 import igraph as ig
 import numpy as np
 
+
 class Sequence:
     def __init__(self, header, seq):
         self._header = header
@@ -53,16 +54,18 @@ def read_fasta(filepath):
                 break
 
 
-def build_graph(ani_file, fasta_file, min_cov=snakemake.params.min_cov):
+def build_graph(
+    ani_file,
+    fasta_file,
+    min_ani=snakemake.params.min_ani,
+    min_cov=snakemake.params.min_cov,
+):
     # Read the input FASTA file to get the names of all the sequences (nodes)
     nodes = []
-    lengths = defaultdict(int)
+    lengths = []
     for seq in read_fasta(fasta_file):
-        seq_id = seq.id.rsplit("_", 1)[0]
-        if (len(nodes) and (nodes[-1] != seq_id)) or not len(nodes):
-            nodes.append(seq_id)
-        lengths[seq_id] = len(seq) - seq.seq.upper().count("N")
-    lengths = [lengths[i] for i in nodes]
+        nodes.append(seq.id)
+        lengths.append(len(seq) - seq.seq.upper().count("N"))
     nodes_set = set(nodes)
     # Initiate the lists that will store the edges between two sequences and
     # their respective weights (ANI × coverage) and ANI
@@ -86,11 +89,12 @@ def build_graph(ani_file, fasta_file, min_cov=snakemake.params.min_cov):
                 float(qcov),
                 float(tcov),
             )
-            # If both the sequences in the ANI pair were in the input FASTA file
-            # and either `qcov` or `tcov` is equal to or greater than `min_cov`,
-            # store their connection
+            # If both the sequences in the ANI pair were in the input FASTA file,
+            # their ANI is equal to or greater than `min_ani`, and either`qcov`
+            # or `tcov` is equal to or greater than `min_cov`, store their connection
             if (
                 ((seq_1 in nodes_set) and (seq_2 in nodes_set))
+                and (ani >= min_ani)
                 and ((qcov >= min_cov) or (tcov >= min_cov))
             ):
                 pair = tuple(sorted([seq_1, seq_2]))
@@ -110,7 +114,10 @@ def build_graph(ani_file, fasta_file, min_cov=snakemake.params.min_cov):
 
 
 def pick_resolution(
-    graph, target_avg_ani=snakemake.params.avg_ani, steps=101, seed=snakemake.params.seed
+    graph,
+    target_avg_ani=snakemake.params.avg_ani,
+    steps=101,
+    seed=snakemake.params.seed,
 ):
     """
     Given a graph (`graph`) and a target average within-cluster ANI (`target_avg_ani`),
@@ -164,8 +171,12 @@ def pick_resolution(
             break
     return last_res
 
+
 ani_graph = build_graph(snakemake.input.ANI, snakemake.input.FASTA)
-leiden_resolution = pick_resolution(ani_graph)
+if snakemake.params.leiden_resolution == "auto":
+    leiden_resolution = pick_resolution(ani_graph)
+else:
+    leiden_resolution = snakemake.params.leiden_resolution
 clusters = ani_graph.community_leiden(
     weights="weight", resolution_parameter=leiden_resolution
 )
