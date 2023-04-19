@@ -26,18 +26,13 @@ def yield_alignment_blocks(handle):
     # init block with 1st record
     key, alns = None, None
     for aln in parse_blast(handle):
-        if aln.qname == aln.tname:
-            continue
         key = (aln.qname, aln.tname)
         alns = [aln]
         break
     # loop over remaining records
     for aln in parse_blast(handle):
-        # skip self hits
-        if aln.qname == aln.tname:
-            continue
         # extend block
-        elif (aln.qname, aln.tname) == key:
+        if (aln.qname, aln.tname) == key:
             alns.append(aln)
         # yield block and start new one
         else:
@@ -48,9 +43,21 @@ def yield_alignment_blocks(handle):
 
 
 def prune_alns(alns, max_evalue=snakemake.params.blast_max_evalue):
-    # remove short aligns
-    alns = [aln for aln in alns if aln.evalue <= max_evalue]
-    return alns
+    # remove alignments with > max_evalue
+    # discard alignments after the entire query length has been covered
+    keep = []
+    cur_aln = 0
+    qry_len = alns[0].qlen
+    for aln in alns:
+        qcoords = aln.qcoords
+        aln_len = max(qcoords) - min(qcoords) + 1
+        if aln.evalue > max_evalue:
+            continue
+        if cur_aln >= qry_len or aln_len + cur_aln >= 1.10 * qry_len:
+            break
+        keep.append(aln)
+        cur_aln += aln_len
+    return keep
 
 
 def compute_ani(alns):
@@ -69,9 +76,8 @@ def compute_cov(alns, genome_lengths):
         else:
             nr_coords.append([start, stop])
     # compute qry_cov
-    alen = sum([stop - start + 1 for start, stop in nr_coords])
+    alen = sum(stop - start + 1 for start, stop in nr_coords)
     qcov = round(alen / genome_lengths[alns[0].qname], 4)
-
     # merge tcoords
     coords = sorted([a.tcoords for a in alns])
     nr_coords = [coords[0]]
