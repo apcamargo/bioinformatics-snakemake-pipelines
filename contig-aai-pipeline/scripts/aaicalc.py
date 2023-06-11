@@ -1,19 +1,48 @@
 import math
-from collections import defaultdict
+from collections import defaultdict, deque
 from bidict import bidict
 
 
-def cantor_pair(k1, k2):
-    z = int(0.5 * (k1 + k2) * (k1 + k2 + 1) + k2)
-    return z
+def szudzik_pair(*numbers):
+    if len(numbers) < 2:
+        raise ValueError("Szudzik pairing function needs at least 2 numbers as input")
+    elif any((n < 0) or (not isinstance(n, int)) for n in numbers):
+        raise ValueError("Szudzik pairing function maps only non-negative integers")
+    numbers = deque(numbers)
+    n1 = numbers.popleft()
+    n2 = numbers.popleft()
+    if n1 != max(n1, n2):
+        mapping = math.pow(n2, 2) + n1
+    else:
+        mapping = math.pow(n1, 2) + n1 + n2
+    mapping = int(mapping)
+    if not numbers:
+        return mapping
+    else:
+        numbers.appendleft(mapping)
+        return szudzik_pair(*numbers)
 
 
-def cantor_depair(z):
-    w = math.floor((math.sqrt(8 * z + 1) - 1) / 2)
-    t = (w ** 2 + w) / 2
-    y = int(z - t)
-    x = int(w - y)
-    return x, y
+def szudzik_unpair(number, n=2):
+    if (number < 0) or (not isinstance(number, int)):
+        raise ValueError("Szudzik unpairing function requires a non-negative integer")
+    if number - math.pow(math.floor(math.sqrt(number)), 2) < math.floor(
+        math.sqrt(number)
+    ):
+        n1 = number - math.pow(math.floor(math.sqrt(number)), 2)
+        n2 = math.floor(math.sqrt(number))
+    else:
+        n1 = math.floor(math.sqrt(number))
+        n2 = (
+            number
+            - math.pow(math.floor(math.sqrt(number)), 2)
+            - math.floor(math.sqrt(number))
+        )
+    n1, n2 = int(n1), int(n2)
+    if n > 2:
+        return szudzik_unpair(n1, n - 1) + (n2,)
+    else:
+        return n1, n2
 
 
 gene_count = defaultdict(int)
@@ -37,9 +66,9 @@ with open(snakemake.input["RBH"]) as fin:
         pident, length = float(pident), int(length)
         qseqgen, sseqgen = qseqid.rsplit("_", 1)[0], sseqid.rsplit("_", 1)[0]
         gene_pair = tuple(sorted((genes[qseqid], genes[sseqid])))
-        gene_pair = cantor_pair(*gene_pair)
+        gene_pair = szudzik_pair(*gene_pair)
         genome_pair = tuple(sorted((genomes[qseqgen], genomes[sseqgen])))
-        genome_pair = cantor_pair(*genome_pair)
+        genome_pair = szudzik_pair(*genome_pair)
         genome_pairs_genes[genome_pair].append(gene_pair)
         gene_pair_info[gene_pair][0] += pident
         gene_pair_info[gene_pair][1] += length
@@ -55,7 +84,7 @@ with open(snakemake.output[0], "w") as fout:
         "aai\n"
     )
     for genome_pair, gene_pairs in genome_pairs_genes.items():
-        genome_1, genome_2 = cantor_depair(genome_pair)
+        genome_1, genome_2 = szudzik_unpair(genome_pair)
         genome_1 = genomes.inv[genome_1]
         genome_2 = genomes.inv[genome_2]
         min_n_genes = min(gene_count[genome_1], gene_count[genome_2])
